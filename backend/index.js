@@ -9,7 +9,7 @@ const redis = new Redis();
 app.use(express.json())
 app.use(RedisLimiterMiddleware)
 
-app.get('/suryash/test', async (req, res) => {
+app.get('/test', async (req, res) => {
 
     const redisObj = {
         "appName": "Sashakt",
@@ -20,7 +20,29 @@ app.get('/suryash/test', async (req, res) => {
     }
     res.send('Hello TEST')
 })
-app.get('/suryash/dp', async (req, res) => {
+app.get('/test1', async (req, res) => {
+
+    const redisObj = {
+        "appName": "Digital Partner",
+        "module": "Discrepancy",
+        "ip": req.ip,
+        "hostname": req.hostname,
+        "path": req.path,
+    }
+    res.send('Hello DP')
+})
+app.get('/test2', async (req, res) => {
+
+    const redisObj = {
+        "appName": "Digital Partner",
+        "module": "Discrepancy",
+        "ip": req.ip,
+        "hostname": req.hostname,
+        "path": req.path,
+    }
+    res.send('Hello DP')
+})
+app.get('/test3', async (req, res) => {
 
     const redisObj = {
         "appName": "Digital Partner",
@@ -32,24 +54,24 @@ app.get('/suryash/dp', async (req, res) => {
     res.send('Hello DP')
 })
 
-app.post('/log-api', async (req, res) => {
-    const body = req.body
-    const keyName = req.body.ip + ':' + req.body.path
-    await redis.multi()
-        .incr(keyName)
-        .expire(keyName, 10)
-        .exec()
+// app.post('/log-api', async (req, res) => {
+//     const body = req.body
+//     const keyName = req.body.ip + ':' + req.body.path
+//     await redis.multi()
+//         .incr(keyName)
+//         .expire(keyName, 10)
+//         .exec()
 
-    const callsCount = await redis.get(keyName)
-    if (callsCount > 5) res.send({
-        message: 'API LIMIT REACHED'
-    })
-    // .expire(keyName, 100)
-    // console.log(savingData, '===>body')
-    res.send({
-        message: keyName + ' saved to redis'
-    })
-})
+//     const callsCount = await redis.get(keyName)
+//     if (callsCount > 5) res.send({
+//         message: 'API LIMIT REACHED'
+//     })
+//     // .expire(keyName, 100)
+//     // console.log(savingData, '===>body')
+//     res.send({
+//         message: keyName + ' saved to redis'
+//     })
+// })
 
 app.get('/retrive-redis-data', async (req, res) => {
     const keysFromRedis = await redis.keys('*')

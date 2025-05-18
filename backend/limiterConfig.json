@@ -1,0 +1,5 @@
+{
+    "limitingType": "ip_based",
+    "limitDuration": 60,
+    "limitCount": 10
+}
