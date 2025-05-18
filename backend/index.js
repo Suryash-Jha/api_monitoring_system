@@ -1,13 +1,16 @@
 const express = require('express')
 const axios = require('axios')
 const Redis = require('ioredis')
+const { RedisLimiterMiddleware } = require('./middleware/checkRedisCount')
 const app = express()
 const PORT = 3001
 const redis = new Redis();
 
 app.use(express.json())
+app.use(RedisLimiterMiddleware)
+
 app.get('/suryash/test', async (req, res) => {
-   
+
     const redisObj = {
         "appName": "Sashakt",
         "module": "Intermediary",
@@ -15,13 +18,10 @@ app.get('/suryash/test', async (req, res) => {
         "hostname": req.hostname,
         "path": req.path,
     }
-    console.log(redisObj, '--->redisObj')
-    const respFromRedis = await axios.post('http://localhost:3001/log-api', redisObj)
-    console.log(respFromRedis, 'respFromRedis')
-    res.send('Hello World')
+    res.send('Hello TEST')
 })
 app.get('/suryash/dp', async (req, res) => {
-   
+
     const redisObj = {
         "appName": "Digital Partner",
         "module": "Discrepancy",
@@ -29,33 +29,49 @@ app.get('/suryash/dp', async (req, res) => {
         "hostname": req.hostname,
         "path": req.path,
     }
-    console.log(redisObj, '--->redisObj')
-    const respFromRedis = await axios.post('http://localhost:3001/log-api', redisObj)
-    console.log(respFromRedis, 'respFromRedis')
-    res.send('Hello World')
+    res.send('Hello DP')
 })
 
 app.post('/log-api', async (req, res) => {
     const body = req.body
-    const keyName= req.body.ip+':'+req.body.path
+    const keyName = req.body.ip + ':' + req.body.path
     await redis.multi()
-    .incr(keyName)
-    .expire(keyName, 10)
-    .exec()
-    
+        .incr(keyName)
+        .expire(keyName, 10)
+        .exec()
+
+    const callsCount = await redis.get(keyName)
+    if (callsCount > 5) res.send({
+        message: 'API LIMIT REACHED'
+    })
     // .expire(keyName, 100)
     // console.log(savingData, '===>body')
     res.send({
-        message: keyName+' saved to redis'
+        message: keyName + ' saved to redis'
     })
 })
 
-app.get('/retrive-redis-data', async (req, res)=>{
-    const dataFromRedis= await redis.keys('*')
-    res.send(dataFromRedis)
+app.get('/retrive-redis-data', async (req, res) => {
+    const keysFromRedis = await redis.keys('*')
+
+    // const finalData = await keysFromRedis.reduce(async (acc, curr) => {
+    //     const data = await redis.get(curr)
+    //     await acc.push({ curr, data })
+    //     return acc
+    // }, [])
+     const apiHits = await Promise.all(
+        keysFromRedis.map(async (key) => {
+            const data = await redis.get(key);
+            return { key, data };
+        })
+    );
+    console.log(apiHits)
+    res.send({
+        apiHits,
+    })
 })
-app.get('/delete-all-redis-data', async (req, res)=>{
-    const dataFromRedis= await redis.flushall()
+app.get('/delete-all-redis-data', async (req, res) => {
+    const dataFromRedis = await redis.flushall()
     res.send(dataFromRedis)
 })
 
